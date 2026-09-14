@@ -50,6 +50,13 @@ class DeploymentService:
         )
         return deployment
 
+    async def queue_webhook(
+        self, environment: Environment, commit_sha: str, commit_message: str | None
+    ) -> Deployment:
+        return await DeploymentRepository(self.session).create(
+            environment, commit_sha, commit_message or "", DeploymentTrigger.WEBHOOK
+        )
+
     async def _status(self, deployment: Deployment, status: DeploymentStatus) -> None:
         deployment.status = status
         await self.session.flush()

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     session_secret: SecretStr = SecretStr("change-this-session-secret-before-production")
     admin_username: str | None = None
     admin_password: SecretStr | None = None
+    github_webhook_secret: SecretStr | None = None
     database_host: str = "localhost"
     database_port: int = Field(default=5432, ge=1, le=65535)
     database_name: str = "auto_deploy"

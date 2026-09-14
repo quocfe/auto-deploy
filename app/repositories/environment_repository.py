@@ -15,6 +15,14 @@ class EnvironmentRepository:
         )
         return list(await self.session.scalars(query))
 
+    async def list_by_branch(self, project_id: int, branch: str) -> list[Environment]:
+        query = (
+            select(Environment)
+            .where(Environment.project_id == project_id, Environment.branch == branch)
+            .order_by(Environment.id)
+        )
+        return list(await self.session.scalars(query))
+
     async def get(self, environment_id: int) -> Environment | None:
         return await self.session.get(Environment, environment_id)
 
