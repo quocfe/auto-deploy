@@ -99,6 +99,10 @@ class GitService:
             raise GitServiceError("Repository is missing or invalid")
         return path
 
+    def repository_path(self, project_slug: str) -> Path:
+        """Return the validated checkout location for a cloned project."""
+        return self._repository(project_slug)
+
     def _source(self, repository_url: str) -> str:
         if not repository_url or any(
             ord(char) <= 32 or ord(char) == 127 for char in repository_url

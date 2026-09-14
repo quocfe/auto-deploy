@@ -164,3 +164,22 @@ class EnvironmentRead(BaseModel):
     latest_available_commit: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class DeploymentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    project_id: int
+    environment_id: int
+    commit_sha: str
+    commit_message: str | None
+    image_name: str | None
+    container_name: str | None
+    status: str
+    trigger: str
+    failed_stage: str | None
+    error_message: str | None
+    started_at: datetime | None
+    finished_at: datetime | None
+    created_at: datetime
+    updated_at: datetime

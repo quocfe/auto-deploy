@@ -9,6 +9,7 @@ from app.core.database import get_session
 from app.repositories.environment_repository import EnvironmentRepository
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.management import (
+    DeploymentRead,
     EnvironmentCreate,
     EnvironmentRead,
     EnvironmentUpdate,
@@ -16,6 +17,9 @@ from app.schemas.management import (
     ProjectRead,
     ProjectUpdate,
 )
+from app.services.deployment_service import DeploymentService
+from app.services.docker_service import DockerService
+from app.services.git_service import GitService, GitServiceError
 
 router = APIRouter(prefix="/api")
 Session = Annotated[AsyncSession, Depends(get_session)]
@@ -101,3 +105,22 @@ async def delete_environment(environment_id: int, session: Session):
     environment = await require_environment(session, environment_id)
     await persist(session, EnvironmentRepository(session).delete(environment))
     return Response(status_code=204)
+
+
+@router.post(
+    "/environments/{environment_id}/deploy", response_model=DeploymentRead, status_code=201
+)
+async def deploy_environment(environment_id: int, session: Session):
+    environment = await require_environment(session, environment_id)
+    if not environment.enabled:
+        raise HTTPException(409, "Environment is disabled")
+    await session.refresh(environment, attribute_names=["project"])
+    try:
+        deployment = await DeploymentService(session, GitService(), DockerService()).create_manual(
+            environment
+        )
+        await session.commit()
+    except (GitServiceError, ValueError) as exc:
+        await session.rollback()
+        raise HTTPException(422, "Unable to resolve deployment commit") from exc
+    return deployment

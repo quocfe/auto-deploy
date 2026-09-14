@@ -153,5 +153,17 @@ Git output and command arguments because they can contain credentials.
 
 Git tests use temporary local repositories and require Git on the test PATH.
 The service is synchronous and does not serialize concurrent access to a project;
-deployment orchestration and worker coordination are later phases. No deployment
-endpoint invokes this service yet.
+worker coordination arrives in Phase 7.
+
+## Manual deployment (Phase 6)
+
+`POST /api/environments/{id}/deploy` resolves the environment branch to an exact
+remote SHA, creates a deployment record, and performs a synchronous deployment.
+It fetches or clones the project checkout, checks out that SHA, builds
+`md-{project-slug}:{environment}-{short-sha}`, then replaces the stable environment
+container on its configured Docker network. Application ports are never published
+to the host, so Nginx Proxy Manager can keep routing by the stable container name.
+
+The build always completes before an existing container is stopped; a build failure
+therefore leaves the running version untouched. The forthcoming worker phase moves
+this blocking work out of the HTTP request and claims queued deployment records.
