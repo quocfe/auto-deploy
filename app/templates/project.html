@@ -1,1 +1,5 @@
-{% extends "base.html" %}{% block content %}<h1>{{ project.name }}</h1><p>{{ project.repository_url }}</p><h2>Environments</h2><ul>{% for environment in environments %}<li><a href="/environments/{{ environment.id }}/dashboard">{{ environment.name }}</a> · {{ environment.branch }}</li>{% endfor %}</ul>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<div class="page-heading"><div><h1>{{ project.name }}</h1><p>{{ project.repository_url }}</p></div><div class="actions"><a class="button secondary" href="/projects/{{ project.id }}/edit">Edit Project</a><a class="button" href="/projects/{{ project.id }}/environments/new">+ Environment</a></div></div>
+<h2>Environments</h2><ul class="card-list">{% for environment in environments %}<li><a href="/environments/{{ environment.id }}/dashboard">{{ environment.name }}</a><small>{{ environment.branch }}</small><a href="/environments/{{ environment.id }}/edit">Edit Environment</a></li>{% else %}<li>No environments yet.</li>{% endfor %}</ul>
+{% endblock %}

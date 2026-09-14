@@ -1,1 +1,5 @@
-{% extends "base.html" %}{% block content %}<h1>Projects</h1><ul>{% for project in projects %}<li><a href="/projects/{{ project.id }}">{{ project.name }}</a> <small>{{ project.slug }}</small></li>{% else %}<li>No projects yet.</li>{% endfor %}</ul>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<div class="page-heading"><h1>Projects</h1><a class="button" href="/projects/new">+ New Project</a></div>
+<ul class="card-list">{% for project in projects %}<li><a href="/projects/{{ project.id }}">{{ project.name }}</a><small>{{ project.slug }}</small><a href="/projects/{{ project.id }}/edit">Edit Project</a></li>{% else %}<li>No projects yet.</li>{% endfor %}</ul>
+{% endblock %}
