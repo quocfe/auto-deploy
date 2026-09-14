@@ -177,3 +177,12 @@ to the host, so Nginx Proxy Manager can keep routing by the stable container nam
 The build always completes before an existing container is stopped; a build failure
 therefore leaves the running version untouched. The API and worker share the
 repository volume; only the worker performs the blocking Docker operations.
+
+## GitHub webhooks (Phases 11–12)
+
+Set `GITHUB_WEBHOOK_SECRET`, then configure GitHub push events to
+`/webhooks/github/{project_id}`. Each request is verified with
+`X-Hub-Signature-256`. A matching environment records the pushed SHA in
+`latest_available_commit`; it is queued only when both `enabled` and `auto_deploy`
+are true. The dashboard shows a pending SHA and deploy control for production
+environments with auto-deploy disabled.
