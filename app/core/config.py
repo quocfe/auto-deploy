@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         return self
 
     database_host: str = "localhost"
-    database_port: int = Field(default=5432, ge=1, le=65535)
+    database_port: int = Field(default=5433, ge=1, le=65535)
     database_name: str = "auto_deploy"
     database_user: str = "auto_deploy"
     database_password: SecretStr = SecretStr("auto_deploy")

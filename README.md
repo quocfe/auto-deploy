@@ -19,7 +19,8 @@ it does not query the database. Compose waits for PostgreSQL health before start
 
 Optional: copy `.env.example` to `.env` to override defaults. Compose sets the API's
 database hostname to `postgres` and internal port to `5432`; `DATABASE_PORT` controls
-the host port used by local Python development. Both published ports bind to localhost.
+the host port used by local Python development and defaults to `5433` to avoid conflicts
+with an existing local PostgreSQL. Both published ports bind to localhost.
 The example credentials are for development; set your own password before server use.
 PostgreSQL credentials initialize a new data volume only; changing `.env` does not
 change an existing database password.
