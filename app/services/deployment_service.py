@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from time import sleep
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.models import Deployment, DeploymentStatus, DeploymentTrigger, Environment
 from app.repositories.deployment_repository import DeploymentRepository
 from app.services.docker_service import DockerService
@@ -14,10 +16,22 @@ from app.services.git_service import GitService
 class DeploymentService:
     """Synchronous Phase-6 deployment orchestration, called outside a worker for now."""
 
-    def __init__(self, session: AsyncSession, git: GitService, docker: DockerService):
+    def __init__(
+        self,
+        session: AsyncSession,
+        git: GitService,
+        docker: DockerService,
+        *,
+        startup_wait_seconds: float | None = None,
+    ):
         self.session = session
         self.git = git
         self.docker = docker
+        self.startup_wait_seconds = (
+            get_settings().container_startup_wait_seconds
+            if startup_wait_seconds is None
+            else startup_wait_seconds
+        )
 
     @staticmethod
     def image_name(environment: Environment, commit_sha: str) -> str:
@@ -88,6 +102,7 @@ class DeploymentService:
                 environment=self.environment_values(environment),
                 network=environment.docker_network,
             )
+            sleep(self.startup_wait_seconds)
             stage = DeploymentStatus.VERIFYING
             await self._status(deployment, stage)
             if (
@@ -199,6 +214,7 @@ class DeploymentService:
                 environment=self.environment_values(environment),
                 network=environment.docker_network,
             )
+            sleep(self.startup_wait_seconds)
             stage = DeploymentStatus.VERIFYING
             await self._status(deployment, stage)
             state = self.docker.inspect_container(environment.container_name).get("State", {})

@@ -106,7 +106,9 @@ async def test_manual_deployment_builds_before_replacing_container(deployment):
     docker = FakeDocker()
 
     session = FakeSession()
-    await DeploymentService(session, git, docker).execute(record, environment)
+    await DeploymentService(session, git, docker, startup_wait_seconds=0).execute(
+        record, environment
+    )
 
     assert record.status == DeploymentStatus.SUCCESS
     assert record.image_name == "md-app:development-aaaaaaa"
@@ -122,7 +124,9 @@ async def test_build_failure_marks_deployment_failed_without_touching_old_contai
     docker = FakeDocker(DockerServiceError("Docker image build failed"))
 
     session = FakeSession()
-    await DeploymentService(session, FakeGit(), docker).execute(record, environment)
+    await DeploymentService(session, FakeGit(), docker, startup_wait_seconds=0).execute(
+        record, environment
+    )
 
     assert record.status == DeploymentStatus.FAILED
     assert record.failed_stage == "BUILDING"
@@ -144,7 +148,9 @@ async def test_rollback_restarts_a_successful_deployment_image(deployment):
     session = FakeSession()
     docker = FakeDocker()
 
-    rollback = await DeploymentService(session, FakeGit(), docker).rollback(target, environment)
+    rollback = await DeploymentService(session, FakeGit(), docker, startup_wait_seconds=0).rollback(
+        target, environment
+    )
 
     assert rollback.trigger == DeploymentTrigger.ROLLBACK
     assert rollback.status == DeploymentStatus.SUCCESS

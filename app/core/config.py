@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     repository_root: Path = Path("/opt/auto-deploy/repos")
     git_timeout_seconds: int = Field(default=300, ge=1)
     worker_poll_seconds: float = Field(default=2, gt=0, le=60)
+    container_startup_wait_seconds: float = Field(default=3, ge=0, le=60)
     app_master_key: SecretStr | None = None
     session_secret: SecretStr = SecretStr("change-this-session-secret-before-production")
     admin_username: str | None = None
