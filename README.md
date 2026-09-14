@@ -158,12 +158,13 @@ worker coordination arrives in Phase 7.
 ## Manual deployment (Phase 6)
 
 `POST /api/environments/{id}/deploy` resolves the environment branch to an exact
-remote SHA, creates a deployment record, and performs a synchronous deployment.
-It fetches or clones the project checkout, checks out that SHA, builds
+remote SHA, creates a queued deployment record, and returns HTTP 202. The worker
+claims it with PostgreSQL `FOR UPDATE SKIP LOCKED`, then fetches or clones the
+project checkout, checks out that SHA, builds
 `md-{project-slug}:{environment}-{short-sha}`, then replaces the stable environment
 container on its configured Docker network. Application ports are never published
 to the host, so Nginx Proxy Manager can keep routing by the stable container name.
 
 The build always completes before an existing container is stopped; a build failure
-therefore leaves the running version untouched. The forthcoming worker phase moves
-this blocking work out of the HTTP request and claims queued deployment records.
+therefore leaves the running version untouched. The API and worker share the
+repository volume; only the worker performs the blocking Docker operations.

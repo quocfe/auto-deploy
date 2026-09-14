@@ -35,3 +35,14 @@ class DeploymentRepository:
         self.session.add(deployment)
         await self.session.flush()
         return deployment
+
+    async def claim_next(self) -> Deployment | None:
+        query = (
+            select(Deployment)
+            .options(selectinload(Deployment.environment).selectinload(Environment.project))
+            .where(Deployment.status == DeploymentStatus.QUEUED)
+            .order_by(Deployment.created_at, Deployment.id)
+            .with_for_update(skip_locked=True)
+            .limit(1)
+        )
+        return await self.session.scalar(query)

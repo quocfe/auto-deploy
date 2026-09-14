@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     repository_root: Path = Path("/opt/auto-deploy/repos")
     git_timeout_seconds: int = Field(default=300, ge=1)
+    worker_poll_seconds: float = Field(default=2, gt=0, le=60)
     database_host: str = "localhost"
     database_port: int = Field(default=5432, ge=1, le=65535)
     database_name: str = "auto_deploy"

@@ -8,6 +8,7 @@ services:
       APP_ENV: ${APP_ENV:-development}
       REPOSITORY_ROOT: ${REPOSITORY_ROOT:-/opt/auto-deploy/repos}
       GIT_TIMEOUT_SECONDS: ${GIT_TIMEOUT_SECONDS:-300}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${DATABASE_NAME:-auto_deploy}
@@ -16,12 +17,35 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - repositories:/opt/auto-deploy/repos
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: ["python", "-m", "app.workers.deployment_worker"]
+    environment:
+      REPOSITORY_ROOT: ${REPOSITORY_ROOT:-/opt/auto-deploy/repos}
+      GIT_TIMEOUT_SECONDS: ${GIT_TIMEOUT_SECONDS:-300}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME:-auto_deploy}
+      DATABASE_USER: ${DATABASE_USER:-auto_deploy}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-auto_deploy}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - repositories:/opt/auto-deploy/repos
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   postgres:
@@ -43,3 +67,4 @@ services:
 
 volumes:
   postgres_data:
+  repositories:

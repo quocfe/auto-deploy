@@ -108,7 +108,7 @@ async def delete_environment(environment_id: int, session: Session):
 
 
 @router.post(
-    "/environments/{environment_id}/deploy", response_model=DeploymentRead, status_code=201
+    "/environments/{environment_id}/deploy", response_model=DeploymentRead, status_code=202
 )
 async def deploy_environment(environment_id: int, session: Session):
     environment = await require_environment(session, environment_id)
@@ -116,7 +116,7 @@ async def deploy_environment(environment_id: int, session: Session):
         raise HTTPException(409, "Environment is disabled")
     await session.refresh(environment, attribute_names=["project"])
     try:
-        deployment = await DeploymentService(session, GitService(), DockerService()).create_manual(
+        deployment = await DeploymentService(session, GitService(), DockerService()).queue_manual(
             environment
         )
         await session.commit()

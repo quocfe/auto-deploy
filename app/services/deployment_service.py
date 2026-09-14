@@ -23,7 +23,7 @@ class DeploymentService:
         project = environment.project
         return f"md-{project.slug}:{environment.name}-{commit_sha[:7]}"
 
-    async def create_manual(self, environment: Environment) -> Deployment:
+    async def queue_manual(self, environment: Environment) -> Deployment:
         project = environment.project
         if self.git.repository_exists(project.slug):
             self.git.fetch_repository(project.slug)
@@ -34,7 +34,6 @@ class DeploymentService:
         deployment = await DeploymentRepository(self.session).create(
             environment, commit_sha, commit_message, DeploymentTrigger.MANUAL
         )
-        await self.execute(deployment, environment)
         return deployment
 
     async def _status(self, deployment: Deployment, status: DeploymentStatus) -> None:
