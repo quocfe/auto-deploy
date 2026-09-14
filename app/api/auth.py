@@ -15,6 +15,11 @@ router = APIRouter()
 Session = Annotated[AsyncSession, Depends(get_session)]
 
 
+def require_api_login(request: Request) -> None:
+    if not request.session.get("user_id"):
+        raise HTTPException(401, "Login required")
+
+
 async def authenticate(session: AsyncSession, username: str, password: str) -> User | None:
     user = await session.scalar(select(User).where(User.username == username))
     if user is not None:

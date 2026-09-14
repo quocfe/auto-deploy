@@ -186,3 +186,10 @@ Set `GITHUB_WEBHOOK_SECRET`, then configure GitHub push events to
 `latest_available_commit`; it is queued only when both `enabled` and `auto_deploy`
 are true. The dashboard shows a pending SHA and deploy control for production
 environments with auto-deploy disabled.
+
+## Production security
+
+Set a unique `SESSION_SECRET`, `APP_MASTER_KEY`, `ADMIN_USERNAME`,
+`ADMIN_PASSWORD`, and `GITHUB_WEBHOOK_SECRET` before production use. The app refuses
+the default session secret in production. Dashboard and management routes require a
+logged-in session; GitHub webhooks are instead authenticated by their HMAC signature.

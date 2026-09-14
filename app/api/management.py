@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth import require_api_login
 from app.core.database import get_session
 from app.repositories.deployment_repository import DeploymentRepository
 from app.repositories.environment_repository import EnvironmentRepository
@@ -28,7 +29,7 @@ from app.services.docker_service import DockerService
 from app.services.encryption_service import EncryptionServiceError
 from app.services.git_service import GitService, GitServiceError
 
-router = APIRouter(prefix="/api")
+router = APIRouter(prefix="/api", dependencies=[Depends(require_api_login)])
 Session = Annotated[AsyncSession, Depends(get_session)]
 
 
