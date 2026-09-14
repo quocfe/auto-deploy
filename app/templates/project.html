@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<h1>{{ project.name }}</h1><p>{{ project.repository_url }}</p><h2>Environments</h2><ul>{% for environment in environments %}<li><a href="/environments/{{ environment.id }}/dashboard">{{ environment.name }}</a> · {{ environment.branch }}</li>{% endfor %}</ul>{% endblock %}

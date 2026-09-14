@@ -1,0 +1,2 @@
+{% extends "base.html" %}{% block content %}<h1>Deployment #{{ deployment.id }}</h1><p>{{ deployment.status }} · {{ deployment.commit_sha[:7] }}</p><pre>{% for log in logs %}[{{ log.created_at }}] {{ log.level }} {{ log.message }}
+{% endfor %}</pre>{% endblock %}

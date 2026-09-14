@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     git_timeout_seconds: int = Field(default=300, ge=1)
     worker_poll_seconds: float = Field(default=2, gt=0, le=60)
     app_master_key: SecretStr | None = None
+    session_secret: SecretStr = SecretStr("change-this-session-secret-before-production")
+    admin_username: str | None = None
+    admin_password: SecretStr | None = None
     database_host: str = "localhost"
     database_port: int = Field(default=5432, ge=1, le=65535)
     database_name: str = "auto_deploy"

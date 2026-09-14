@@ -9,6 +9,10 @@ services:
       REPOSITORY_ROOT: ${REPOSITORY_ROOT:-/opt/auto-deploy/repos}
       GIT_TIMEOUT_SECONDS: ${GIT_TIMEOUT_SECONDS:-300}
       WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+      APP_MASTER_KEY: ${APP_MASTER_KEY:-}
+      SESSION_SECRET: ${SESSION_SECRET:-change-this-session-secret-before-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${DATABASE_NAME:-auto_deploy}
@@ -35,6 +39,7 @@ services:
       REPOSITORY_ROOT: ${REPOSITORY_ROOT:-/opt/auto-deploy/repos}
       GIT_TIMEOUT_SECONDS: ${GIT_TIMEOUT_SECONDS:-300}
       WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+      APP_MASTER_KEY: ${APP_MASTER_KEY:-}
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${DATABASE_NAME:-auto_deploy}
