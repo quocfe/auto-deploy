@@ -162,6 +162,12 @@ async def delete_environment_variable(variable_id: int, session: Session):
     return Response(status_code=204)
 
 
+@router.get("/environments/{environment_id}/deployments", response_model=list[DeploymentRead])
+async def list_environment_deployments(environment_id: int, session: Session):
+    await require_environment(session, environment_id)
+    return await DeploymentRepository(session).list_for_environment(environment_id)
+
+
 @router.post(
     "/environments/{environment_id}/deploy", response_model=DeploymentRead, status_code=202
 )

@@ -78,6 +78,14 @@ class DeploymentRepository:
         )
         return list(await self.session.scalars(query))
 
+    async def list_for_environment(self, environment_id: int) -> list[Deployment]:
+        query = (
+            select(Deployment)
+            .where(Deployment.environment_id == environment_id)
+            .order_by(Deployment.created_at.desc(), Deployment.id.desc())
+        )
+        return list(await self.session.scalars(query))
+
     async def add_log(self, deployment: Deployment, level: str, message: str) -> DeploymentLog:
         log = DeploymentLog(deployment_id=deployment.id, level=level, message=message[:4000])
         self.session.add(log)

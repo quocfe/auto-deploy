@@ -47,7 +47,21 @@ async def environment_page(environment_id: int, request: Request, session: Sessi
     environment = await EnvironmentRepository(session).get(environment_id)
     if environment is None:
         raise HTTPException(404, "Environment not found")
-    return templates.TemplateResponse(request, "environment.html", {"environment": environment})
+    deployments = await DeploymentRepository(session).list_for_environment(environment_id)
+    return templates.TemplateResponse(
+        request,
+        "environment.html",
+        {"environment": environment, "deployments": deployments},
+    )
+
+
+@router.get("/deployments/{deployment_id}/dashboard-status", include_in_schema=False)
+async def deployment_status(deployment_id: int, request: Request, session: Session):
+    require_login(request)
+    deployment = await DeploymentRepository(session).get(deployment_id)
+    if deployment is None:
+        raise HTTPException(404, "Deployment not found")
+    return templates.TemplateResponse(request, "deployment_status.html", {"deployment": deployment})
 
 
 @router.get("/deployments/{deployment_id}/dashboard", include_in_schema=False)
