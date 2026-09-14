@@ -47,6 +47,7 @@ class FakeDocker:
         self.calls.append(("build", args, kwargs))
         if self.build_error:
             raise self.build_error
+        return type("Build", (), {"logs": ["Docker build complete"]})()
 
     def image_exists(self, image):
         self.calls.append(("image_exists", image))
@@ -112,7 +113,8 @@ async def test_manual_deployment_builds_before_replacing_container(deployment):
     assert [call[0] for call in docker.calls] == ["build", "stop", "remove", "run", "inspect"]
     assert docker.calls[0][2]["dockerfile"] == "Dockerfile"
     assert docker.calls[3][2]["network"] == "web_network"
-    assert [log.level for log in session.added] == ["INFO"] * 8
+    assert [log.level for log in session.added] == ["INFO"] * 9
+    assert any(log.message == "Docker build complete" for log in session.added)
 
 
 async def test_build_failure_marks_deployment_failed_without_touching_old_container(deployment):

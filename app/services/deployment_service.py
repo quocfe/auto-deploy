@@ -101,11 +101,7 @@ class DeploymentService:
         except Exception as exc:
             deployment.status = DeploymentStatus.FAILED
             deployment.failed_stage = stage.value
-            deployment.error_message = str(exc)[:4000]
-            await self.session.flush()
-            await DeploymentRepository(self.session).add_log(
-                deployment, "ERROR", deployment.error_message
-            )
+            await self._failure_logs(deployment, environment, exc)
         finally:
             deployment.finished_at = datetime.now(UTC)
             await self.session.flush()
@@ -115,6 +111,38 @@ class DeploymentService:
         deployment.status = status
         await self.session.flush()
         await DeploymentRepository(self.session).add_log(deployment, "INFO", status.value)
+
+    def _redact(self, environment: Environment, message: str) -> str:
+        redacted = message
+        try:
+            secrets = [
+                EncryptionService().decrypt(variable.value)
+                for variable in environment.variables
+                if variable.is_secret
+            ]
+        except Exception:
+            secrets = []
+        for secret in secrets:
+            if secret:
+                redacted = redacted.replace(secret, "[REDACTED]")
+        return redacted[:4000]
+
+    async def _failure_logs(
+        self, deployment: Deployment, environment: Environment, error: Exception
+    ) -> None:
+        repository = DeploymentRepository(self.session)
+        deployment.error_message = self._redact(environment, str(error))
+        await self.session.flush()
+        await repository.add_log(deployment, "ERROR", deployment.error_message)
+        if deployment.failed_stage in {
+            DeploymentStatus.STARTING.value,
+            DeploymentStatus.VERIFYING.value,
+        }:
+            try:
+                output = self.docker.get_container_logs(environment.container_name)
+            except Exception:
+                return
+            await repository.add_log(deployment, "ERROR", self._redact(environment, output))
 
     async def cleanup_images(self, environment: Environment, keep: int = 5) -> None:
         successful = await DeploymentRepository(self.session).latest_successful(environment.id)
@@ -151,12 +179,14 @@ class DeploymentService:
             deployment.container_name = environment.container_name
             stage = DeploymentStatus.BUILDING
             await self._status(deployment, stage)
-            self.docker.build_image(
+            build = self.docker.build_image(
                 self.git.repository_path(project.slug),
                 build_context=environment.build_context,
                 dockerfile=environment.dockerfile,
                 image_name=image_name,
             )
+            for line in build.logs:
+                await DeploymentRepository(self.session).add_log(deployment, "INFO", line)
             stage = DeploymentStatus.STOPPING_OLD
             await self._status(deployment, stage)
             self.docker.stop_container(environment.container_name)
@@ -179,11 +209,7 @@ class DeploymentService:
         except Exception as exc:
             deployment.status = DeploymentStatus.FAILED
             deployment.failed_stage = stage.value
-            deployment.error_message = str(exc)[:4000]
-            await self.session.flush()
-            await DeploymentRepository(self.session).add_log(
-                deployment, "ERROR", deployment.error_message
-            )
+            await self._failure_logs(deployment, environment, exc)
         finally:
             deployment.finished_at = datetime.now(UTC)
             await self.session.flush()
