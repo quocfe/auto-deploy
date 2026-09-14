@@ -45,6 +45,10 @@ class FakeDocker:
         if self.build_error:
             raise self.build_error
 
+    def image_exists(self, image):
+        self.calls.append(("image_exists", image))
+        return True
+
     def stop_container(self, name):
         self.calls.append(("stop", name))
 
@@ -119,3 +123,31 @@ async def test_build_failure_marks_deployment_failed_without_touching_old_contai
     assert record.failed_stage == "BUILDING"
     assert [call[0] for call in docker.calls] == ["build"]
     assert session.added[-1].level == "ERROR"
+
+
+async def test_rollback_restarts_a_successful_deployment_image(deployment):
+    _, environment = deployment
+    target = Deployment(
+        id=2,
+        project_id=1,
+        environment_id=environment.id,
+        commit_sha="b" * 40,
+        image_name="md-app:development-bbbbbbb",
+        status=DeploymentStatus.SUCCESS,
+        trigger=DeploymentTrigger.MANUAL,
+    )
+    session = FakeSession()
+    docker = FakeDocker()
+
+    rollback = await DeploymentService(session, FakeGit(), docker).rollback(target, environment)
+
+    assert rollback.trigger == DeploymentTrigger.ROLLBACK
+    assert rollback.status == DeploymentStatus.SUCCESS
+    assert rollback.image_name == target.image_name
+    assert [call[0] for call in docker.calls] == [
+        "image_exists",
+        "stop",
+        "remove",
+        "run",
+        "inspect",
+    ]

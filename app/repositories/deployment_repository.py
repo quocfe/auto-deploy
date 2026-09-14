@@ -67,6 +67,17 @@ class DeploymentRepository:
         )
         return list(await self.session.scalars(query))
 
+    async def latest_successful(self, environment_id: int) -> list[Deployment]:
+        query = (
+            select(Deployment)
+            .where(
+                Deployment.environment_id == environment_id,
+                Deployment.status == DeploymentStatus.SUCCESS,
+            )
+            .order_by(Deployment.finished_at.desc(), Deployment.id.desc())
+        )
+        return list(await self.session.scalars(query))
+
     async def add_log(self, deployment: Deployment, level: str, message: str) -> DeploymentLog:
         log = DeploymentLog(deployment_id=deployment.id, level=level, message=message[:4000])
         self.session.add(log)

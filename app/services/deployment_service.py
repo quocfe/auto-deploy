@@ -57,6 +57,59 @@ class DeploymentService:
             environment, commit_sha, commit_message or "", DeploymentTrigger.WEBHOOK
         )
 
+    async def rollback(self, target: Deployment, environment: Environment) -> Deployment:
+        if target.status != DeploymentStatus.SUCCESS or not target.image_name:
+            raise ValueError("Rollback target must be a successful deployment with an image")
+        if not self.docker.image_exists(target.image_name):
+            raise ValueError("Rollback image is no longer available")
+        deployment = Deployment(
+            project_id=environment.project_id,
+            environment_id=environment.id,
+            commit_sha=target.commit_sha,
+            commit_message=target.commit_message,
+            image_name=target.image_name,
+            container_name=environment.container_name,
+            status=DeploymentStatus.QUEUED,
+            trigger=DeploymentTrigger.ROLLBACK,
+        )
+        self.session.add(deployment)
+        await self.session.flush()
+        deployment.started_at = datetime.now(UTC)
+        stage = DeploymentStatus.STOPPING_OLD
+        try:
+            await self._status(deployment, stage)
+            self.docker.stop_container(environment.container_name)
+            self.docker.remove_container(environment.container_name)
+            stage = DeploymentStatus.STARTING
+            await self._status(deployment, stage)
+            self.docker.run_container(
+                target.image_name,
+                container_name=environment.container_name,
+                environment=self.environment_values(environment),
+                network=environment.docker_network,
+            )
+            stage = DeploymentStatus.VERIFYING
+            await self._status(deployment, stage)
+            if (
+                not self.docker.inspect_container(environment.container_name)
+                .get("State", {})
+                .get("Running")
+            ):
+                raise RuntimeError("Container did not remain running")
+            await self._status(deployment, DeploymentStatus.SUCCESS)
+        except Exception as exc:
+            deployment.status = DeploymentStatus.FAILED
+            deployment.failed_stage = stage.value
+            deployment.error_message = str(exc)[:4000]
+            await self.session.flush()
+            await DeploymentRepository(self.session).add_log(
+                deployment, "ERROR", deployment.error_message
+            )
+        finally:
+            deployment.finished_at = datetime.now(UTC)
+            await self.session.flush()
+        return deployment
+
     async def _status(self, deployment: Deployment, status: DeploymentStatus) -> None:
         deployment.status = status
         await self.session.flush()

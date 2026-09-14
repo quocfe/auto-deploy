@@ -193,3 +193,22 @@ async def list_deployment_logs(deployment_id: int, session: Session):
     if await DeploymentRepository(session).get(deployment_id) is None:
         raise HTTPException(404, "Deployment not found")
     return await DeploymentRepository(session).list_logs(deployment_id)
+
+
+@router.post(
+    "/deployments/{deployment_id}/rollback", response_model=DeploymentRead, status_code=201
+)
+async def rollback_deployment(deployment_id: int, session: Session):
+    repository = DeploymentRepository(session)
+    target = await repository.get(deployment_id)
+    if target is None:
+        raise HTTPException(404, "Deployment not found")
+    try:
+        deployment = await DeploymentService(session, GitService(), DockerService()).rollback(
+            target, target.environment
+        )
+        await session.commit()
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(409, str(exc)) from exc
+    return deployment
