@@ -120,4 +120,38 @@ Lists are ordered by ID. Database tests include CRUD, conflicts, and validation.
 
 Management APIs have no authentication until Phase 15. Keep this development
 instance bound to localhost. These endpoints only manage database records;
-Git operations and container deployment arrive in later phases.
+Container deployment arrives in later phases.
+
+## Git service (Phase 4)
+
+`app.services.git_service.GitService` stores one checkout per project under
+`REPOSITORY_ROOT` (default `/opt/auto-deploy/repos`). `GIT_TIMEOUT_SECONDS` defaults
+to 300 per command. The Docker image includes Git and SSH and gives the application
+user ownership of the default storage directory. Custom roots must be writable.
+Persistent server mounts will be configured in Phase 16; the current container's
+repository storage is not preserved when that container is replaced.
+
+The service supports `repository_exists`, `clone_repository`, `fetch_repository`,
+`checkout_commit`, `get_commit_message`, and `get_remote_branch_sha`. Each method
+takes a project slug; clone additionally takes a repository URL, commit methods take
+a full 40- or 64-character SHA, and branch lookup takes a branch name.
+
+Cloning creates a checkout without populating its worktree. Fetch runs
+`git fetch --all --prune`. Checkout verifies a commit object before performing
+a detached checkout, `git reset --hard <sha>`, and `git clean -fd`. These operations
+discard tracked changes and untracked files in that project's checkout; Git-ignored
+files remain. Existing clone destinations are rejected without overwriting them.
+Branch lookup queries origin and returns the current remote SHA; fetch must run
+before checking out an object that has not been downloaded yet.
+
+Use HTTPS or SSH URLs without embedded passwords. Local repositories are disabled
+unless explicitly enabled with `allow_local_repositories=True` for tests. Git runs
+without a shell, interactive prompts, inherited Git-specific environment variables,
+global Git configuration, or hooks. SSH requires provisioned credentials and trusted
+host keys; the service will not prompt to accept a new host. Errors deliberately omit
+Git output and command arguments because they can contain credentials.
+
+Git tests use temporary local repositories and require Git on the test PATH.
+The service is synchronous and does not serialize concurrent access to a project;
+deployment orchestration and worker coordination are later phases. No deployment
+endpoint invokes this service yet.

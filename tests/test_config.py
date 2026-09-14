@@ -4,6 +4,14 @@ from pydantic import ValidationError
 from app.core.config import Settings
 
 
+def test_repository_configuration(monkeypatch, tmp_path):
+    monkeypatch.setenv("REPOSITORY_ROOT", str(tmp_path))
+    monkeypatch.setenv("GIT_TIMEOUT_SECONDS", "42")
+    settings = Settings(_env_file=None)
+    assert settings.repository_root == tmp_path
+    assert settings.git_timeout_seconds == 42
+
+
 def test_environment_configuration(monkeypatch):
     monkeypatch.setenv("APP_NAME", "Test Deploy")
     monkeypatch.setenv("DATABASE_HOST", "db.example")
