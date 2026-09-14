@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="page-heading"><h1>Projects</h1><a class="button" href="/projects/new">+ New Project</a></div>
-<ul class="card-list">{% for project in projects %}<li><a href="/projects/{{ project.id }}">{{ project.name }}</a><small>{{ project.slug }}</small><a href="/projects/{{ project.id }}/edit">Edit Project</a></li>{% else %}<li>No projects yet.</li>{% endfor %}</ul>
+<div class="eyebrow">YOUR WORKSPACE, AT A GLANCE</div>
+<div class="page-heading"><div><h1>Projects<span class="heading-dot">.</span></h1><p>A home for your code. A clear path to production.</p></div><a class="button" href="/projects/new">＋ New Project</a></div>
+<section class="welcome-panel"><div><span class="eyebrow">READY WHEN YOU ARE</span><h2>Good code deserves<br>a smooth landing.</h2><p>Manage repositories, configure environments,<br>and ship your next release from one place.</p><a href="/projects/new" class="text-link">Connect a project &nbsp; ↗</a></div><div class="shipping-art" aria-hidden="true"><div class="art-ring"></div><div class="art-tile">↗</div><span class="art-tag tag-code">⎇ &nbsp; commit</span><span class="art-tag tag-deploy">● &nbsp; deploy</span></div></section>
+<div class="section-heading"><h2>All projects <span class="count">{{ projects|length }}</span></h2><span class="muted">Your connected repositories</span></div>
+<div class="project-grid">{% for project in projects %}<article class="project-card"><div class="card-top"><span class="project-icon">{{ project.name[:1]|upper }}</span><span class="badge">{{ project.provider }}</span></div><h3><a href="/projects/{{ project.id }}">{{ project.name }} <span>↗</span></a></h3><p class="repository">{{ project.repository_url }}</p><div class="card-bottom"><code>{{ project.slug }}</code><a href="/projects/{{ project.id }}/edit">Edit Project ↗</a></div></article>{% else %}<div class="empty-state"><h3>Your first project starts here</h3><p>Connect a repository to set up your deployment workflow.</p><a class="button" href="/projects/new">New Project</a></div>{% endfor %}</div>
 {% endblock %}

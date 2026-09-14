@@ -1,2 +1,21 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ title or "Auto Deploy" }}</title><link rel="stylesheet" href="/static/app.css"><script src="https://unpkg.com/htmx.org@2.0.4"></script></head><body><nav><a href="/">Auto Deploy</a><a href="/logout">Logout</a></nav><main>{% block content %}{% endblock %}</main></body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{ title or "Auto Deploy" }}</title>
+    <link rel="stylesheet" href="/static/app.css?v=2" />
+    <link rel="stylesheet" href="/static/workspace.css?v=2" />
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/"><span class="brand-mark">↗</span>auto<span>deploy</span></a>
+      <div class="workspace"><span class="avatar">W</span><div>My workspace<small>Deployment workspace</small></div></div>
+      <p class="nav-label">WORKSPACE</p>
+      <nav aria-label="Main navigation"><a href="/" class="active">▦ &nbsp; Projects</a><a href="/projects/new">＋ &nbsp; New project</a></nav>
+      <div class="sidebar-bottom"><div class="sidebar-note"><span>CODE. SHIP. REPEAT.</span><p>From your repository<br>to your next release.</p><b>↗</b></div><a class="account" href="/logout"><span class="avatar">W</span><span>Workspace session<small>Sign out ↗</small></span></a></div>
+    </aside>
+    <div class="app-shell"><header class="topbar"><div><span class="muted">Workspace</span><span class="divider">/</span><a href="/">Projects</a></div><span class="console-label">Deployment console</span></header><main>{% block content %}{% endblock %}</main><footer>Auto Deploy <span>Built for your next release.</span></footer></div>
+  </body>
+</html>

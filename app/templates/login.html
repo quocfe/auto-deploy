@@ -1,1 +1,24 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Login · Auto Deploy</title><link rel="stylesheet" href="/static/app.css"></head><body><main class="login"><h1>Auto Deploy</h1>{% if error %}<p class="error">{{ error }}</p>{% endif %}<form method="post" action="/login"><label>Username<input name="username" required autofocus></label><label>Password<input name="password" type="password" required></label><button>Login</button></form></main></body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Login · Auto Deploy</title>
+    <link rel="stylesheet" href="/static/app.css" />
+    <link rel="stylesheet" href="/static/workspace.css?v=2" />
+  </head>
+  <body class="login-page">
+    <main class="login">
+      <h1>Auto Deploy</h1>
+      {% if error %}
+      <p class="error">{{ error }}</p>
+      {% endif %}
+      <form method="post" action="/login">
+        <label>Username<input name="username" required autofocus /></label
+        ><label
+          >Password<input name="password" type="password" required /></label
+        ><button>Login</button>
+      </form>
+    </main>
+  </body>
+</html>

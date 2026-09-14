@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="page-heading"><h1>{{ environment.name }}</h1><div class="actions"><a class="button secondary" href="/environments/{{ environment.id }}/edit">Edit Environment</a><a class="button secondary" href="/environments/{{ environment.id }}/variables/dashboard">Env Variables</a></div></div>
+<a class="back-link" href="/projects/{{ environment.project_id }}">← Back to project</a><div class="eyebrow">ENVIRONMENT OVERVIEW</div>
+<div class="page-heading"><div><h1>{{ environment.name }}<span class="heading-dot">.</span></h1><p>Configure your runtime. Keep every release in view.</p></div><div class="actions"><a class="button secondary" href="/environments/{{ environment.id }}/edit">Edit Environment</a><a class="button secondary" href="/environments/{{ environment.id }}/variables/dashboard">Env Variables</a></div></div>
 <dl><dt>Branch</dt><dd>{{ environment.branch }}</dd><dt>Container</dt><dd>{{ environment.container_name }}:{{ environment.container_port }}</dd><dt>Network</dt><dd>{{ environment.docker_network }}</dd><dt>Auto deploy</dt><dd>{{ environment.auto_deploy }}</dd></dl>{% if environment.latest_available_commit %}<p><strong>New commit available</strong><br><code>{{ environment.latest_available_commit[:7] }}</code></p>{% endif %}
 <form method="post" action="/environments/{{ environment.id }}/deploy"><button>Deploy {{ environment.name }}</button></form>
 <h2>Deployments</h2><ul class="card-list">{% for deployment in deployments %}<li><a href="/deployments/{{ deployment.id }}/dashboard">{{ deployment.status }} · {{ deployment.commit_sha[:7] }} · {{ deployment.trigger }}</a></li>{% else %}<li>No deployments yet.</li>{% endfor %}</ul>
