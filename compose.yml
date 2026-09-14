@@ -1,0 +1,43 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      APP_NAME: ${APP_NAME:-Auto Deploy}
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME:-auto_deploy}
+      DATABASE_USER: ${DATABASE_USER:-auto_deploy}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-auto_deploy}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-auto_deploy}
+      POSTGRES_USER: ${DATABASE_USER:-auto_deploy}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-auto_deploy}
+    ports:
+      - "127.0.0.1:${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
