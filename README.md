@@ -88,7 +88,8 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 Variable API responses never return their values, preventing the management API from
 accidentally exposing either plaintext or encrypted secret material.
 Timestamps are timezone-aware; `updated_at` is maintained by SQLAlchemy updates.
-Deployment execution, authentication, and the dashboard are planned for later phases.
+Deployment execution runs in the worker; the dashboard and management API require
+an authenticated session.
 
 Database tests require a separate disposable PostgreSQL database. Set the `DATABASE_*`
 variables to that database, run `alembic upgrade head`, and set `TEST_DATABASE_URL`
@@ -127,9 +128,8 @@ fields cannot be null. Unknown fields are rejected. Project ownership and
 `latest_available_commit` cannot be changed through environment management requests.
 Lists are ordered by ID. Database tests include CRUD, conflicts, and validation.
 
-Management APIs have no authentication until Phase 15. Keep this development
-instance bound to localhost. These endpoints only manage database records;
-Container deployment arrives in later phases.
+Management APIs require an authenticated session. Keep this development instance
+bound to localhost. Deployment requests enqueue work for the separate worker.
 
 ## Git service (Phase 4)
 
@@ -137,8 +137,7 @@ Container deployment arrives in later phases.
 `REPOSITORY_ROOT` (default `/opt/auto-deploy/repos`). `GIT_TIMEOUT_SECONDS` defaults
 to 300 per command. The Docker image includes Git and SSH and gives the application
 user ownership of the default storage directory. Custom roots must be writable.
-Persistent server mounts will be configured in Phase 16; the current container's
-repository storage is not preserved when that container is replaced.
+Compose shares persistent repository storage between the API and worker services.
 
 The service supports `repository_exists`, `clone_repository`, `fetch_repository`,
 `checkout_commit`, `get_commit_message`, and `get_remote_branch_sha`. Each method
