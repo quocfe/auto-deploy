@@ -5,6 +5,7 @@ from alembic import context
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from app import models  # noqa: F401 -- register all tables for Alembic
 from app.core.config import get_settings
 from app.core.database import Base
 
