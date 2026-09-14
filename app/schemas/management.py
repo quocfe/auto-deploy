@@ -21,6 +21,9 @@ DockerName = Annotated[
 Branch = Annotated[str, StringConstraints(min_length=1, max_length=255)]
 RelativePath = Annotated[str, StringConstraints(min_length=1, max_length=1024)]
 Port = Annotated[int, Field(strict=True, ge=1, le=65535)]
+EnvironmentVariableKey = Annotated[
+    str, StringConstraints(min_length=1, max_length=255, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+]
 
 
 class InputModel(BaseModel):
@@ -192,3 +195,25 @@ class DeploymentLogRead(BaseModel):
     level: str
     message: str
     created_at: datetime
+
+
+class EnvironmentVariableCreate(InputModel):
+    key: EnvironmentVariableKey
+    value: str
+    is_secret: bool = False
+
+
+class EnvironmentVariableUpdate(PatchModel):
+    key: EnvironmentVariableKey | None = None
+    value: str | None = None
+    is_secret: bool | None = None
+
+
+class EnvironmentVariableRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    environment_id: int
+    key: str
+    is_secret: bool
+    created_at: datetime
+    updated_at: datetime

@@ -16,6 +16,7 @@ dependencies = [
     "alembic>=1.13,<2",
     "pydantic-settings>=2.5,<3",
     "docker>=7,<8",
+    "cryptography>=43,<46",
 ]
 
 [project.optional-dependencies]

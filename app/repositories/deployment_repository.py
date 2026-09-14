@@ -2,7 +2,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Deployment, DeploymentLog, DeploymentStatus, DeploymentTrigger, Environment
+from app.models import (
+    Deployment,
+    DeploymentLog,
+    DeploymentStatus,
+    DeploymentTrigger,
+    Environment,
+)
 
 
 class DeploymentRepository:
@@ -12,7 +18,10 @@ class DeploymentRepository:
     async def get(self, deployment_id: int) -> Deployment | None:
         query = (
             select(Deployment)
-            .options(selectinload(Deployment.environment).selectinload(Environment.project))
+            .options(
+                selectinload(Deployment.environment).selectinload(Environment.project),
+                selectinload(Deployment.environment).selectinload(Environment.variables),
+            )
             .where(Deployment.id == deployment_id)
         )
         return await self.session.scalar(query)
@@ -39,7 +48,10 @@ class DeploymentRepository:
     async def claim_next(self) -> Deployment | None:
         query = (
             select(Deployment)
-            .options(selectinload(Deployment.environment).selectinload(Environment.project))
+            .options(
+                selectinload(Deployment.environment).selectinload(Environment.project),
+                selectinload(Deployment.environment).selectinload(Environment.variables),
+            )
             .where(Deployment.status == DeploymentStatus.QUEUED)
             .order_by(Deployment.created_at, Deployment.id)
             .with_for_update(skip_locked=True)

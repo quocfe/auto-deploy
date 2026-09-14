@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.repositories.deployment_repository import DeploymentRepository
 from app.repositories.environment_repository import EnvironmentRepository
+from app.repositories.environment_variable_repository import EnvironmentVariableRepository
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.management import (
     DeploymentLogRead,
@@ -15,12 +16,16 @@ from app.schemas.management import (
     EnvironmentCreate,
     EnvironmentRead,
     EnvironmentUpdate,
+    EnvironmentVariableCreate,
+    EnvironmentVariableRead,
+    EnvironmentVariableUpdate,
     ProjectCreate,
     ProjectRead,
     ProjectUpdate,
 )
 from app.services.deployment_service import DeploymentService
 from app.services.docker_service import DockerService
+from app.services.encryption_service import EncryptionServiceError
 from app.services.git_service import GitService, GitServiceError
 
 router = APIRouter(prefix="/api")
@@ -106,6 +111,53 @@ async def update_environment(environment_id: int, data: EnvironmentUpdate, sessi
 async def delete_environment(environment_id: int, session: Session):
     environment = await require_environment(session, environment_id)
     await persist(session, EnvironmentRepository(session).delete(environment))
+    return Response(status_code=204)
+
+
+@router.get(
+    "/environments/{environment_id}/variables", response_model=list[EnvironmentVariableRead]
+)
+async def list_environment_variables(environment_id: int, session: Session):
+    await require_environment(session, environment_id)
+    return await EnvironmentVariableRepository(session).list(environment_id)
+
+
+@router.post(
+    "/environments/{environment_id}/variables",
+    response_model=EnvironmentVariableRead,
+    status_code=201,
+)
+async def create_environment_variable(
+    environment_id: int, data: EnvironmentVariableCreate, session: Session
+):
+    await require_environment(session, environment_id)
+    try:
+        return await persist(
+            session, EnvironmentVariableRepository(session).create(environment_id, data)
+        )
+    except EncryptionServiceError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.patch("/environment-variables/{variable_id}", response_model=EnvironmentVariableRead)
+async def update_environment_variable(
+    variable_id: int, data: EnvironmentVariableUpdate, session: Session
+):
+    variable = await EnvironmentVariableRepository(session).get(variable_id)
+    if variable is None:
+        raise HTTPException(404, "Environment variable not found")
+    try:
+        return await persist(session, EnvironmentVariableRepository(session).update(variable, data))
+    except EncryptionServiceError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.delete("/environment-variables/{variable_id}", status_code=204)
+async def delete_environment_variable(variable_id: int, session: Session):
+    variable = await EnvironmentVariableRepository(session).get(variable_id)
+    if variable is None:
+        raise HTTPException(404, "Environment variable not found")
+    await persist(session, EnvironmentVariableRepository(session).delete(variable))
     return Response(status_code=204)
 
 

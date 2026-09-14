@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Deployment, DeploymentStatus, DeploymentTrigger, Environment
 from app.repositories.deployment_repository import DeploymentRepository
 from app.services.docker_service import DockerService
+from app.services.encryption_service import EncryptionService
 from app.services.git_service import GitService
 
 
@@ -22,6 +23,19 @@ class DeploymentService:
     def image_name(environment: Environment, commit_sha: str) -> str:
         project = environment.project
         return f"md-{project.slug}:{environment.name}-{commit_sha[:7]}"
+
+    @staticmethod
+    def environment_values(
+        environment: Environment, encryption: EncryptionService | None = None
+    ) -> dict[str, str]:
+        result: dict[str, str] = {}
+        for variable in environment.variables:
+            result[variable.key] = (
+                (encryption or EncryptionService()).decrypt(variable.value)
+                if variable.is_secret
+                else variable.value
+            )
+        return result
 
     async def queue_manual(self, environment: Environment) -> Deployment:
         project = environment.project
@@ -77,7 +91,7 @@ class DeploymentService:
             self.docker.run_container(
                 image_name,
                 container_name=environment.container_name,
-                environment=None,
+                environment=self.environment_values(environment),
                 network=environment.docker_network,
             )
             stage = DeploymentStatus.VERIFYING

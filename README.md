@@ -77,7 +77,16 @@ Phase 2 adds User, Project, Environment, EnvironmentVariable, Deployment, and
 DeploymentLog with PostgreSQL status/trigger enums. Migrations are run explicitly.
 Environment names are unique per project; container names are globally unique.
 Deleting a project or environment cascades to its deployment history and variables.
-Secrets are not encrypted yet; the variable model is storage infrastructure for Phase 9.
+Environment variables are scoped to one environment. Secret variables are encrypted at
+rest with Fernet using `APP_MASTER_KEY`, then decrypted only when the worker starts
+the container. Generate and set a persistent key before adding secrets:
+
+```sh
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Variable API responses never return their values, preventing the management API from
+accidentally exposing either plaintext or encrypted secret material.
 Timestamps are timezone-aware; `updated_at` is maintained by SQLAlchemy updates.
 Deployment execution, authentication, and the dashboard are planned for later phases.
 
