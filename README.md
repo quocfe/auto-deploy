@@ -2,6 +2,7 @@
 
 A lightweight self-hosted deployment platform. Phase 1 provides a FastAPI application,
 environment configuration, async SQLAlchemy infrastructure, Alembic, and PostgreSQL.
+Phase 2 adds the core data model; Phase 3 adds Project and Environment management APIs.
 
 ## Run with Docker
 
@@ -87,3 +88,36 @@ to its `postgresql+asyncpg://user:password@host:port/database` URL before runnin
 `TEST_DATABASE_URL`, database tests are skipped and health/configuration tests still run.
 Use `alembic check` to detect schema drift. On a disposable database, verify migration
 reversibility with `alembic downgrade base` followed by `alembic upgrade head`.
+
+## Management API (Phase 3)
+
+After applying migrations, explore request and response schemas at `/docs`.
+
+| Resource | Endpoints |
+| --- | --- |
+| Projects | `GET /api/projects`, `POST /api/projects` |
+| Project | `GET`, `PATCH`, `DELETE /api/projects/{id}` |
+| Project environments | `GET`, `POST /api/projects/{project_id}/environments` |
+| Environment | `GET`, `PATCH`, `DELETE /api/environments/{id}` |
+
+Create a project with `name`, `slug`, `repository_url`, and optional `provider`
+(defaults to `github`). Create each environment under its project with `name`,
+`branch`, `container_port`, and `container_name`. Docker defaults remain
+`Dockerfile`, `.`, and `web_network`; automatic deployment defaults to false.
+
+Project slugs and environment names use lowercase letters, digits, and single
+hyphens between segments. Branches follow Git ref naming restrictions. Docker
+names start with a letter or digit and use letters, digits, dots, underscores,
+or hyphens. Ports must be integers from 1 to 65535. Build paths must be relative
+without parent traversal. Domains are hostnames without schemes, paths, or ports.
+
+POST returns 201; DELETE returns an empty 204 response. Missing resources return
+404, uniqueness/relationship conflicts return 409, and invalid inputs return 422.
+PATCH changes only supplied fields. `domain: null` clears a domain; other required
+fields cannot be null. Unknown fields are rejected. Project ownership and
+`latest_available_commit` cannot be changed through environment management requests.
+Lists are ordered by ID. Database tests include CRUD, conflicts, and validation.
+
+Management APIs have no authentication until Phase 15. Keep this development
+instance bound to localhost. These endpoints only manage database records;
+Git operations and container deployment arrive in later phases.
