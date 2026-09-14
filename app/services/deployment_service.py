@@ -97,6 +97,7 @@ class DeploymentService:
             ):
                 raise RuntimeError("Container did not remain running")
             await self._status(deployment, DeploymentStatus.SUCCESS)
+            await self.cleanup_images(environment)
         except Exception as exc:
             deployment.status = DeploymentStatus.FAILED
             deployment.failed_stage = stage.value
@@ -114,6 +115,20 @@ class DeploymentService:
         deployment.status = status
         await self.session.flush()
         await DeploymentRepository(self.session).add_log(deployment, "INFO", status.value)
+
+    async def cleanup_images(self, environment: Environment, keep: int = 5) -> None:
+        successful = await DeploymentRepository(self.session).latest_successful(environment.id)
+        for deployment in successful[keep:]:
+            if deployment.image_name:
+                try:
+                    self.docker.remove_image(deployment.image_name)
+                    await DeploymentRepository(self.session).add_log(
+                        deployment, "INFO", "Removed retained image"
+                    )
+                except Exception:
+                    await DeploymentRepository(self.session).add_log(
+                        deployment, "WARNING", "Could not remove retained image"
+                    )
 
     async def execute(self, deployment: Deployment, environment: Environment) -> None:
         """Build before replacing a running container, preserving it on build failure."""
@@ -160,6 +175,7 @@ class DeploymentService:
             if not state.get("Running"):
                 raise RuntimeError("Container did not remain running")
             await self._status(deployment, DeploymentStatus.SUCCESS)
+            await self.cleanup_images(environment)
         except Exception as exc:
             deployment.status = DeploymentStatus.FAILED
             deployment.failed_stage = stage.value

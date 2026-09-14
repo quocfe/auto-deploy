@@ -204,6 +204,20 @@ class DockerService:
             raise DockerServiceError("Docker image lookup failed") from None
         return True
 
+    def remove_image(self, image_name: str) -> None:
+        if (
+            not image_name
+            or image_name.startswith("-")
+            or any(ord(char) <= 32 for char in image_name)
+        ):
+            raise ValueError("Invalid image name")
+        try:
+            self.client.images.remove(image_name)
+        except (ImageNotFound, NotFound):
+            return
+        except (APIError, DockerException, OSError):
+            raise DockerServiceError("Docker image removal failed") from None
+
     def get_container_logs(self, container_name: str) -> str:
         self._name(container_name, "container name")
         try:

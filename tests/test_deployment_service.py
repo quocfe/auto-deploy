@@ -15,6 +15,9 @@ class FakeSession:
     async def flush(self):
         pass
 
+    async def scalars(self, query):
+        return []
+
 
 class FakeGit:
     def __init__(self):
