@@ -183,3 +183,12 @@ class DeploymentRead(BaseModel):
     finished_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+class DeploymentLogRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    deployment_id: int
+    level: str
+    message: str
+    created_at: datetime

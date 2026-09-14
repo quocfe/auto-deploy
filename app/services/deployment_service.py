@@ -39,6 +39,7 @@ class DeploymentService:
     async def _status(self, deployment: Deployment, status: DeploymentStatus) -> None:
         deployment.status = status
         await self.session.flush()
+        await DeploymentRepository(self.session).add_log(deployment, "INFO", status.value)
 
     async def execute(self, deployment: Deployment, environment: Environment) -> None:
         """Build before replacing a running container, preserving it on build failure."""
@@ -90,6 +91,9 @@ class DeploymentService:
             deployment.failed_stage = stage.value
             deployment.error_message = str(exc)[:4000]
             await self.session.flush()
+            await DeploymentRepository(self.session).add_log(
+                deployment, "ERROR", deployment.error_message
+            )
         finally:
             deployment.finished_at = datetime.now(UTC)
             await self.session.flush()

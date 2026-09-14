@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Deployment, DeploymentStatus, DeploymentTrigger, Environment
+from app.models import Deployment, DeploymentLog, DeploymentStatus, DeploymentTrigger, Environment
 
 
 class DeploymentRepository:
@@ -46,3 +46,17 @@ class DeploymentRepository:
             .limit(1)
         )
         return await self.session.scalar(query)
+
+    async def list_logs(self, deployment_id: int) -> list[DeploymentLog]:
+        query = (
+            select(DeploymentLog)
+            .where(DeploymentLog.deployment_id == deployment_id)
+            .order_by(DeploymentLog.id)
+        )
+        return list(await self.session.scalars(query))
+
+    async def add_log(self, deployment: Deployment, level: str, message: str) -> DeploymentLog:
+        log = DeploymentLog(deployment_id=deployment.id, level=level, message=message[:4000])
+        self.session.add(log)
+        await self.session.flush()
+        return log

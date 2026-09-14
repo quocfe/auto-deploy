@@ -6,6 +6,12 @@ from app.services.docker_service import DockerServiceError
 
 
 class FakeSession:
+    def __init__(self):
+        self.added = []
+
+    def add(self, value):
+        self.added.append(value)
+
     async def flush(self):
         pass
 
@@ -91,21 +97,25 @@ async def test_manual_deployment_builds_before_replacing_container(deployment):
     git = FakeGit()
     docker = FakeDocker()
 
-    await DeploymentService(FakeSession(), git, docker).execute(record, environment)
+    session = FakeSession()
+    await DeploymentService(session, git, docker).execute(record, environment)
 
     assert record.status == DeploymentStatus.SUCCESS
     assert record.image_name == "md-app:development-aaaaaaa"
     assert [call[0] for call in docker.calls] == ["build", "stop", "remove", "run", "inspect"]
     assert docker.calls[0][2]["dockerfile"] == "Dockerfile"
     assert docker.calls[3][2]["network"] == "web_network"
+    assert [log.level for log in session.added] == ["INFO"] * 8
 
 
 async def test_build_failure_marks_deployment_failed_without_touching_old_container(deployment):
     record, environment = deployment
     docker = FakeDocker(DockerServiceError("Docker image build failed"))
 
-    await DeploymentService(FakeSession(), FakeGit(), docker).execute(record, environment)
+    session = FakeSession()
+    await DeploymentService(session, FakeGit(), docker).execute(record, environment)
 
     assert record.status == DeploymentStatus.FAILED
     assert record.failed_stage == "BUILDING"
     assert [call[0] for call in docker.calls] == ["build"]
+    assert session.added[-1].level == "ERROR"

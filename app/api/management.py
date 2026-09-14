@@ -6,9 +6,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
+from app.repositories.deployment_repository import DeploymentRepository
 from app.repositories.environment_repository import EnvironmentRepository
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.management import (
+    DeploymentLogRead,
     DeploymentRead,
     EnvironmentCreate,
     EnvironmentRead,
@@ -124,3 +126,18 @@ async def deploy_environment(environment_id: int, session: Session):
         await session.rollback()
         raise HTTPException(422, "Unable to resolve deployment commit") from exc
     return deployment
+
+
+@router.get("/deployments/{deployment_id}", response_model=DeploymentRead)
+async def get_deployment(deployment_id: int, session: Session):
+    deployment = await DeploymentRepository(session).get(deployment_id)
+    if deployment is None:
+        raise HTTPException(404, "Deployment not found")
+    return deployment
+
+
+@router.get("/deployments/{deployment_id}/logs", response_model=list[DeploymentLogRead])
+async def list_deployment_logs(deployment_id: int, session: Session):
+    if await DeploymentRepository(session).get(deployment_id) is None:
+        raise HTTPException(404, "Deployment not found")
+    return await DeploymentRepository(session).list_logs(deployment_id)
